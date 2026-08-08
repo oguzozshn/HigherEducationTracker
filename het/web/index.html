@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Higher Education Tracker</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <h1>Higher Education Tracker</h1>
+      <span class="stats" id="stats"></span>
+    </div>
+    <nav>
+      <button data-view="search" class="active">Ara</button>
+      <button data-view="shortlist">Kısa Liste</button>
+      <button data-view="calendar">Takvim</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="view-search" class="view active">
+      <div class="filters">
+        <input type="text" id="q" placeholder="Program, alan veya üniversite ara…" autocomplete="off">
+        <input type="text" id="city" placeholder="Şehir" size="12" autocomplete="off">
+        <select id="country"><option value="">Tüm ülkeler</option></select>
+        <label class="check"><input type="checkbox" id="free"> Harçsız</label>
+      </div>
+      <div id="results"></div>
+    </section>
+
+    <section id="view-shortlist" class="view">
+      <p class="hint">Başvurmayı düşündüğün programlar. Belge listesi her programın
+        kendi gerekliliklerinden üretiliyor.</p>
+      <div id="shortlist"></div>
+    </section>
+
+    <section id="view-calendar" class="view">
+      <div class="filters">
+        <label class="check"><input type="checkbox" id="all-deadlines"> Kısa liste dışındakileri de göster</label>
+      </div>
+      <div class="note"><strong>kesin</strong> etiketli tarihleri kaynak
+        doğrudan tarih alanı olarak yayımlıyor. <strong>metinden</strong>
+        etiketliler düz yazıdan çıkarıldı — bir başvuruyu kaçırmamak için
+        onları resmî sayfadan doğrula.</div>
+      <div id="calendar"></div>
+    </section>
+  </main>
+
+  <div id="overlay"></div>
+  <aside id="detail"><div class="detail-inner" id="detail-body"></div></aside>
+
+  <script src="/app.js"></script>
+</body>
+</html>

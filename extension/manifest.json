@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Higher Education Tracker — Form Doldurucu",
+  "version": "0.1.0",
+  "description": "Başvuru formlarını kayıtlı profilinden doldurur. Gönderme kararı her zaman sende kalır.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "action": {
+    "default_title": "Formu doldur",
+    "default_popup": "popup/popup.html"
+  },
+  "options_page": "options/options.html"
+}

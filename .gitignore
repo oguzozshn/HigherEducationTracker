@@ -1,0 +1,17 @@
+# Veritabanı ve HTTP önbelleği — kişisel veri içerir, repoya girmez
+data/
+
+# Yerel ayarlar
+.claude/settings.local.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editör / işletim sistemi
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

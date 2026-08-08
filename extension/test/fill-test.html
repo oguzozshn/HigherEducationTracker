@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Doldurma testleri</title>
+  <style>
+    body { font: 14px system-ui, sans-serif; margin: 20px; }
+    #forms { position: absolute; left: -9999px; top: 0; }
+    .pass { color: #1a7f47; }
+    .fail { color: #c0392b; font-weight: 600; }
+    li { margin: 2px 0; font-family: ui-monospace, monospace; font-size: 12.5px; }
+    #summary { font-size: 16px; font-weight: 700; margin: 14px 0; }
+  </style>
+</head>
+<body>
+  <h1>Doldurma testleri</h1>
+  <div id="summary">çalışıyor…</div>
+  <ul id="results"></ul>
+
+  <div id="forms">
+    <!-- A form that would navigate away if anything submitted it. -->
+    <form id="live" action="javascript:void(0)">
+      <label for="fn">First name</label><input id="fn" name="firstName">
+      <label for="dob">Date of birth</label><input id="dob" type="date" name="dateOfBirth">
+      <label for="nat">Nationality</label>
+      <select id="nat" name="nationality">
+        <option value="">— seç —</option>
+        <option value="TR">Turkish</option>
+        <option value="DE">German</option>
+      </select>
+      <label for="cty">Country</label>
+      <select id="cty" name="country">
+        <option value="nl">Netherlands</option>
+      </select>
+      <button type="submit" id="send">Submit application</button>
+    </form>
+  </div>
+
+  <script src="../lib/fields.js"></script>
+  <script src="../lib/matcher.js"></script>
+  <script src="../content/content.js"></script>
+  <script>
+    const results = [];
+    const check = (name, actual, expected) => {
+      results.push({ name, ok: JSON.stringify(actual) === JSON.stringify(expected),
+        actual, expected });
+    };
+
+    const F = window.__hetFiller;
+    const $ = (id) => document.getElementById(id);
+
+    // Any submit at all is a failure: this tool never sends a form.
+    let submitted = false;
+    let clicked = false;
+    $('live').addEventListener('submit', () => { submitted = true; });
+    $('send').addEventListener('click', () => { clicked = true; });
+
+    // -- date coercion ---------------------------------------------------
+    check('ISO tarih oldugu gibi kalir',
+      F.coerceDate($('dob'), '2000-04-12'), '2000-04-12');
+    check('12.04.2000 -> ISO', F.coerceDate($('dob'), '12.04.2000'), '2000-04-12');
+    check('5/4/2000 -> sifir dolgulu ISO',
+      F.coerceDate($('dob'), '5/4/2000'), '2000-04-05');
+    check('Cozulemeyen tarih null doner (alan bos birakilir)',
+      F.coerceDate($('dob'), 'nisan 2000'), null);
+    check('date olmayan alanda deger aynen gecer',
+      F.coerceDate($('fn'), '12.04.2000'), '12.04.2000');
+
+    // -- select matching -------------------------------------------------
+    check('select: option METNiyle eslesir',
+      F.setSelect($('nat'), 'Turkish'), true);
+    check('select: dogru value secildi', $('nat').value, 'TR');
+    check('select: option VALUE ile de eslesir',
+      F.setSelect($('nat'), 'DE'), true);
+    check('select: eslesme yoksa false doner ve deger degismez',
+      [F.setSelect($('nat'), 'Klingon'), $('nat').value], [false, 'DE']);
+    check('select: buyuk/kucuk harf onemsiz',
+      [F.setSelect($('cty'), 'netherlands'), $('cty').value], [true, 'nl']);
+
+    // -- input events fire (frameworks depend on them) -------------------
+    let inputEvents = 0, changeEvents = 0;
+    $('fn').addEventListener('input', () => { inputEvents += 1; });
+    $('fn').addEventListener('change', () => { changeEvents += 1; });
+    F.setValue($('fn'), 'Oğuz');
+    check('deger yazildi', $('fn').value, 'Oğuz');
+    check('input olayi tetiklendi', inputEvents, 1);
+    check('change olayi tetiklendi', changeEvents, 1);
+
+    // -- the safety property ---------------------------------------------
+    const plan = F.scan({
+      profile: { firstName: 'Oğuz', dateOfBirth: '12.04.2000', nationality: 'Turkish' },
+      overrides: {}, includeSensitive: false,
+    });
+    const result = F.fill({ items: plan });
+    check('plan uygulandi (3 alan)', result.filled, 3);
+    check('ad dolduruldu', $('fn').value, 'Oğuz');
+    check('tarih ISO ye cevrilerek dolduruldu', $('dob').value, '2000-04-12');
+    check('uyruk secildi', $('nat').value, 'TR');
+    check('FORM GONDERILMEDI', submitted, false);
+    check('GONDER DUGMESINE TIKLANMADI', clicked, false);
+
+    // -- unfillable values are reported, not forced -----------------------
+    const bad = F.fill({ items: [{ id: $('dob').getAttribute(F.MARK),
+      label: 'Doğum tarihi', value: 'gecersiz' }] });
+    check('cevrilemeyen tarih atlanir ve bildirilir',
+      [bad.filled, bad.skipped.length], [0, 1]);
+    check('atlanan alanin onceki degeri korunur', $('dob').value, '2000-04-12');
+
+    const passed = results.filter((r) => r.ok).length;
+    $('summary').textContent = `${passed}/${results.length} test geçti` +
+      (passed === results.length ? ' ✅' : ' ❌');
+    $('results').innerHTML = results.map((r) =>
+      `<li class="${r.ok ? 'pass' : 'fail'}">${r.ok ? '✓' : '✗'} ${r.name}` +
+      (r.ok ? '' : `  (beklenen: ${JSON.stringify(r.expected)}, ` +
+                   `gelen: ${JSON.stringify(r.actual)})`) + '</li>').join('');
+    window.__testSummary = { passed, total: results.length,
+      failures: results.filter((r) => !r.ok).map((r) => r.name) };
+  </script>
+</body>
+</html>

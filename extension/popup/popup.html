@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="../shared.css">
+  <title>Formu doldur</title>
+</head>
+<body class="popup">
+  <header>
+    <strong>Form doldurucu</strong>
+    <a href="#" id="open-options">Profil</a>
+  </header>
+
+  <div id="status" class="status">taranıyor…</div>
+
+  <label class="toggle" id="sensitive-row" hidden>
+    <input type="checkbox" id="include-sensitive">
+    <span>Kimlik belgesi alanlarını da doldur (pasaport, T.C. kimlik)</span>
+  </label>
+
+  <div id="plan"></div>
+
+  <div id="actions" hidden>
+    <button id="apply" class="primary">Seçilenleri doldur</button>
+    <p class="foot">Bu eklenti hiçbir zaman formu göndermez, düğmeye
+      tıklamaz. Gönderme kararı sende.</p>
+  </div>
+
+  <script src="../lib/fields.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

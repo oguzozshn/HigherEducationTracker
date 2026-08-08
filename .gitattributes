@@ -1,0 +1,11 @@
+# Depoda ve checkout'ta her yerde LF.
+#
+# Windows'ta yazılıp Linux'a giden bir kabuk betiği ya da systemd birimi
+# CRLF taşıyorsa, sistemd ve bash şaşırtıcı biçimlerde patlar: satır sonundaki
+# \r değerin parçası sayılır ve hata mesajı bunu göstermez.
+* text=auto eol=lf
+
+# İkili dosyalara dokunma
+*.png binary
+*.jpg binary
+*.db binary

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="../shared.css">
+  <title>Başvuru profili</title>
+</head>
+<body class="options">
+  <h1>Başvuru profili</h1>
+  <p class="lede">Formlarda tekrar tekrar yazdığın bilgiler. Bir kez gir,
+    eklenti gerisini doldursun.</p>
+
+  <div class="note">
+    Bu bilgiler <strong>yalnızca bu tarayıcıda</strong>, eklentinin kendi
+    deposunda tutulur; hiçbir yere gönderilmez ve senkronize edilmez. Depo
+    şifreli değildir — bilgisayarına erişebilen biri okuyabilir. Kimlik
+    belgesi alanları bu yüzden ayrı işaretli ve doldurulmaları için her
+    seferinde ayrıca onay ister.
+  </div>
+
+  <form id="profile-form"></form>
+
+  <div class="bar">
+    <button id="save" class="primary">Kaydet</button>
+    <span id="saved" class="saved" hidden>kaydedildi</span>
+    <span class="spacer"></span>
+    <button id="export" class="ghost">Dışa aktar</button>
+    <button id="clear" class="ghost danger">Tümünü sil</button>
+  </div>
+
+  <section id="overrides-section" hidden>
+    <h2>Site eşlemeleri</h2>
+    <p class="lede">Bir alanı elle düzelttiğinde o site için hatırlanır.</p>
+    <div id="overrides"></div>
+  </section>
+
+  <script src="../lib/fields.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

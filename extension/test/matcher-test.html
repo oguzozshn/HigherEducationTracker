@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Form eşleştirici testleri</title>
+  <style>
+    body { font: 14px system-ui, sans-serif; margin: 20px; }
+    #forms { position: absolute; left: -9999px; top: 0; }
+    .pass { color: #1a7f47; }
+    .fail { color: #c0392b; font-weight: 600; }
+    li { margin: 2px 0; font-family: ui-monospace, monospace; font-size: 12.5px; }
+    h2 { font-size: 15px; margin: 18px 0 6px; }
+    #summary { font-size: 16px; font-weight: 700; margin: 14px 0; }
+  </style>
+</head>
+<body>
+  <h1>Form eşleştirici testleri</h1>
+  <div id="summary">çalışıyor…</div>
+  <ul id="results"></ul>
+
+  <!-- Kept off-screen rather than display:none: the matcher deliberately
+       skips inputs with no layout box, so hiding these would skip them all. -->
+  <div id="forms">
+    <form id="en">
+      <label for="en-fn">First name</label><input id="en-fn" name="applicant[fn]" autocomplete="given-name">
+      <label for="en-ln">Last name</label><input id="en-ln" name="applicant[ln]">
+      <label for="en-em">Email address</label><input id="en-em" type="email" name="contact_email">
+      <label for="en-dob">Date of birth</label><input id="en-dob" type="date" name="dob">
+      <label for="en-pob">Place of birth</label><input id="en-pob" name="pob">
+      <label for="en-gpa">Grade point average</label><input id="en-gpa" name="gpa">
+      <label for="en-pw">Password</label><input id="en-pw" type="password" name="password">
+      <label for="en-cc">Credit card number</label><input id="en-cc" name="cardNumber">
+      <label for="en-iban">IBAN</label><input id="en-iban" name="iban">
+      <label for="en-pp">Passport number</label><input id="en-pp" name="passportNumber">
+      <input id="en-hidden" type="hidden" name="firstName">
+      <label for="en-dis">First name (disabled)</label><input id="en-dis" name="fname_alt" disabled>
+    </form>
+
+    <form id="de">
+      <label for="de-vn">Vorname</label><input id="de-vn" name="vorname">
+      <label for="de-nn">Nachname</label><input id="de-nn" name="nachname">
+      <label for="de-gd">Geburtsdatum</label><input id="de-gd" type="date" name="geburtsdatum">
+      <label for="de-go">Geburtsort</label><input id="de-go" name="geburtsort">
+      <label for="de-sa">Staatsangehörigkeit</label><input id="de-sa" name="staatsangehoerigkeit">
+      <label for="de-plz">Postleitzahl</label><input id="de-plz" name="plz">
+      <label for="de-hs">Hochschule</label><input id="de-hs" name="hochschule">
+      <label for="de-pw">Passwort</label><input id="de-pw" name="passwort">
+    </form>
+
+    <form id="nl">
+      <label for="nl-vn">Voornaam</label><input id="nl-vn" name="voornaam">
+      <label for="nl-an">Achternaam</label><input id="nl-an" name="achternaam">
+      <label for="nl-gd">Geboortedatum</label><input id="nl-gd" type="date" name="geboortedatum">
+      <label for="nl-wp">Woonplaats</label><input id="nl-wp" name="woonplaats">
+      <label for="nl-pc">Postcode</label><input id="nl-pc" name="postcode">
+      <label for="nl-na">Nationaliteit</label><input id="nl-na" name="nationaliteit">
+      <label for="nl-ww">Wachtwoord</label><input id="nl-ww" type="text" name="wachtwoord">
+    </form>
+
+    <form id="dupe">
+      <label for="d1">First name</label><input id="d1" name="fn1">
+      <label for="d2">First name</label><input id="d2" name="fn2" autocomplete="given-name">
+    </form>
+
+    <form id="odd">
+      <!-- No label, no name that means anything: only a placeholder helps. -->
+      <input id="odd-1" name="q_4471" placeholder="Voornaam">
+      <input id="odd-2" name="q_4472" aria-label="IELTS overall band">
+      <input id="odd-3" name="q_9999">
+      <!-- autocomplete alone, no label and a meaningless name -->
+      <input id="odd-4" name="z_1" autocomplete="family-name">
+      <!-- the spec allows section/purpose prefixes before the token -->
+      <input id="odd-5" name="z_2" autocomplete="shipping postal-code">
+    </form>
+
+    <form id="react">
+      <!-- ids regenerated on every render; only `name` is stable -->
+      <label for=":r7:">Nationality</label><input id=":r7:" name="nationality">
+    </form>
+  </div>
+
+  <script src="../lib/fields.js"></script>
+  <script src="../lib/matcher.js"></script>
+  <script>
+    // Uydurma test verisi — gerçek kimlik bilgisi içermez.
+    const PROFILE = {
+      firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.invalid',
+      dateOfBirth: '1815-12-10', placeOfBirth: 'Londra', nationality: 'Turkish',
+      postalCode: '00000', city: 'Ankara', gpa: '3.42',
+      institution: 'Örnek Üniversitesi', passportNumber: 'X00000000',
+      nationalId: '00000000000', ieltsOverall: '7.5',
+    };
+
+    const results = [];
+    const check = (name, actual, expected) => {
+      const ok = JSON.stringify(actual) === JSON.stringify(expected);
+      results.push({ name, ok, actual, expected });
+    };
+
+    const planFor = (formId, opts = {}) => {
+      const form = document.getElementById(formId);
+      const plan = buildPlan(form, PROFILE, FIELD_DEFS,
+        { NEVER_FILL, NEVER_FILL_TYPES }, opts);
+      const map = {};
+      for (const item of plan) map[item.el.id] = item.key;
+      return map;
+    };
+
+    // -- English --------------------------------------------------------
+    const en = planFor('en');
+    check('EN: autocomplete=given-name -> firstName', en['en-fn'], 'firstName');
+    check('EN: "Last name" -> lastName', en['en-ln'], 'lastName');
+    check('EN: email -> email', en['en-em'], 'email');
+    check('EN: "Date of birth" -> dateOfBirth', en['en-dob'], 'dateOfBirth');
+    check('EN: "Place of birth" -> placeOfBirth (not dateOfBirth)',
+      en['en-pob'], 'placeOfBirth');
+    check('EN: "Grade point average" -> gpa', en['en-gpa'], 'gpa');
+    check('EN: parola alani ASLA doldurulmaz', en['en-pw'], undefined);
+    check('EN: kredi karti ASLA doldurulmaz', en['en-cc'], undefined);
+    check('EN: IBAN ASLA doldurulmaz', en['en-iban'], undefined);
+    check('EN: hidden input atlanir', en['en-hidden'], undefined);
+    check('EN: disabled input atlanir', en['en-dis'], undefined);
+    check('EN: pasaport varsayilan olarak KAPALI', en['en-pp'], undefined);
+
+    const enSensitive = planFor('en', { includeSensitive: true });
+    check('EN: pasaport ancak acik onayla gelir',
+      enSensitive['en-pp'], 'passportNumber');
+
+    // -- German ---------------------------------------------------------
+    const de = planFor('de');
+    check('DE: Vorname -> firstName', de['de-vn'], 'firstName');
+    check('DE: Nachname -> lastName', de['de-nn'], 'lastName');
+    check('DE: Geburtsdatum -> dateOfBirth', de['de-gd'], 'dateOfBirth');
+    check('DE: Geburtsort -> placeOfBirth', de['de-go'], 'placeOfBirth');
+    check('DE: Staatsangehörigkeit -> nationality', de['de-sa'], 'nationality');
+    check('DE: Postleitzahl -> postalCode', de['de-plz'], 'postalCode');
+    check('DE: Hochschule -> institution', de['de-hs'], 'institution');
+    check('DE: Passwort ASLA doldurulmaz', de['de-pw'], undefined);
+
+    // -- Dutch ----------------------------------------------------------
+    const nl = planFor('nl');
+    check('NL: Voornaam -> firstName', nl['nl-vn'], 'firstName');
+    check('NL: Achternaam -> lastName', nl['nl-an'], 'lastName');
+    check('NL: Geboortedatum -> dateOfBirth', nl['nl-gd'], 'dateOfBirth');
+    check('NL: Woonplaats -> city', nl['nl-wp'], 'city');
+    check('NL: Postcode -> postalCode', nl['nl-pc'], 'postalCode');
+    check('NL: Nationaliteit -> nationality', nl['nl-na'], 'nationality');
+    check('NL: Wachtwoord (type=text olsa bile) ASLA doldurulmaz',
+      nl['nl-ww'], undefined);
+
+    // -- one input per profile item -------------------------------------
+    const dupe = planFor('dupe');
+    check('Ayni deger iki alana yazilmaz', Object.keys(dupe).length, 1);
+    check('Kazanan, autocomplete tasiyan alan olur', dupe['d2'], 'firstName');
+
+    // -- weak signals ---------------------------------------------------
+    const odd = planFor('odd');
+    check('Sadece placeholder varsa da bulur', odd['odd-1'], 'firstName');
+    check('Sadece aria-label varsa da bulur', odd['odd-2'], 'ieltsOverall');
+    check('Hicbir ipucu yoksa dokunmaz', odd['odd-3'], undefined);
+    check('Tek basina autocomplete yeter (tire korunmali)',
+      odd['odd-4'], 'lastName');
+    check('autocomplete on ekli olsa da taninir ("shipping postal-code")',
+      odd['odd-5'], 'postalCode');
+
+    // -- learned mappings must survive re-renders ------------------------
+    const reactForm = document.getElementById('react');
+    const reactPlan = buildPlan(reactForm, PROFILE, FIELD_DEFS,
+      { NEVER_FILL, NEVER_FILL_TYPES }, {});
+    check('Uretilmis id imzaya karismaz (name tercih edilir)',
+      reactPlan[0] && reactPlan[0].signature, 'nationality');
+
+    // -- learned override -----------------------------------------------
+    const overridden = planFor('odd', { overrides: { 'q 9999': 'city' } });
+    check('Kullanicinin ogrettigi eslesme uygulanir', overridden['odd-3'], 'city');
+    const skipped = planFor('odd', { overrides: { 'q 4471': '__skip__' } });
+    check('Kullanici bir alani kaliciysa atlatabilir',
+      skipped['odd-1'], undefined);
+
+    // -- report ---------------------------------------------------------
+    const passed = results.filter((r) => r.ok).length;
+    document.getElementById('summary').textContent =
+      `${passed}/${results.length} test geçti` +
+      (passed === results.length ? ' ✅' : ' ❌');
+    document.getElementById('results').innerHTML = results.map((r) =>
+      `<li class="${r.ok ? 'pass' : 'fail'}">${r.ok ? '✓' : '✗'} ${r.name}` +
+      (r.ok ? '' : `  (beklenen: ${JSON.stringify(r.expected)}, ` +
+                   `gelen: ${JSON.stringify(r.actual)})`) + '</li>').join('');
+    window.__testSummary = { passed, total: results.length,
+      failures: results.filter((r) => !r.ok).map((r) => r.name) };
+  </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+[Unit]
+Description=Higher Education Tracker
+Documentation=https://github.com/local/higher-education-tracker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=het
+Group=het
+WorkingDirectory=/opt/het
+
+# Bind to loopback only. Reachability comes from `tailscale serve`, which
+# terminates TLS and forwards from the tailnet. Binding loopback rather than
+# the 100.x tailnet address means the service never depends on the Tailscale
+# interface existing at boot, and can never be exposed if Tailscale is down.
+ExecStart=/usr/bin/python3 -m het serve --host 127.0.0.1 --port 8765 --no-browser
+
+Environment=HET_DB=/var/lib/het/het.db
+Environment=HET_CACHE_DIR=/var/lib/het/cache
+Environment=PYTHONUNBUFFERED=1
+# /opt/het is read-only to this unit, so bytecode caching would fail silently
+# on every import; skip it instead.
+Environment=PYTHONDONTWRITEBYTECODE=1
+
+Restart=on-failure
+RestartSec=5
+
+# The box is RAM-constrained and shared with two other apps. Cap this one so a
+# runaway here can never be what takes them down.
+MemoryHigh=192M
+MemoryMax=256M
+
+# The app only needs to read its own code and write its own state directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/het
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+# AF_UNIX is required despite the app only speaking TCP: glibc name resolution
+# reaches systemd-resolved over a unix socket, so dropping it breaks every
+# outbound fetch to the source catalogues.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+[Install]
+WantedBy=multi-user.target
