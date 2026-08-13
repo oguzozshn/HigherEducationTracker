@@ -60,6 +60,22 @@ def _money(amount) -> str | None:
         return None
 
 
+def _fee_types(tuitions: list[dict] | None) -> set[str]:
+    return {(t.get("tuition_fee_type") or "").lower() for t in tuitions or []}
+
+
+def _only_eu_rate(tuitions: list[dict] | None) -> bool:
+    """True when the source published the EU/EEA rate and nothing else.
+
+    A third of the Dutch catalogue is like this. The statutory rate is around
+    €2,700 while the non-EU rate is often eight times that, so presenting the
+    lone figure without qualification reads as "the price" to exactly the
+    reader it does not apply to.
+    """
+    types = _fee_types(tuitions)
+    return bool(types) and types <= {"statutory"}
+
+
 def _tuition_lines(tuitions: list[dict] | None) -> list[str]:
     if not tuitions:
         return []
@@ -73,13 +89,19 @@ def _tuition_lines(tuitions: list[dict] | None) -> list[str]:
         period = t.get("period") or "year"
         key = (label, money, period)
         seen[key] = f"{label}: {money}/{period}"
+
     def sort_key(k):
         label = k[0]
         for i, name in enumerate(_FEE_ORDER):
             if _FEE_LABELS.get(name) == label:
                 return (i, k[1])
         return (len(_FEE_ORDER), k[1])
-    return [seen[k] for k in sorted(seen, key=sort_key)]
+
+    lines = [seen[k] for k in sorted(seen, key=sort_key)]
+    if lines and _only_eu_rate(tuitions):
+        lines.append("Non-EU rate not published by this source — "
+                     "check the programme page.")
+    return lines
 
 
 def _tuition_summary(tuitions: list[dict] | None) -> str | None:
@@ -101,9 +123,13 @@ def _tuition_summary(tuitions: list[dict] | None) -> str | None:
         return None
     suffix = f"/{next(iter(periods))}" if len(periods) == 1 else ""
     low, high = min(amounts), max(amounts)
-    if low == high:
-        return f"{low:,.0f} EUR{suffix}"
-    return f"{low:,.0f}–{high:,.0f} EUR{suffix}"
+    summary = (f"{low:,.0f} EUR{suffix}" if low == high
+               else f"{low:,.0f}–{high:,.0f} EUR{suffix}")
+    # Qualify a lone statutory figure so the row never reads as the price a
+    # non-EU applicant would pay.
+    if _only_eu_rate(tuitions):
+        summary += " (EU/EEA only)"
+    return summary
 
 
 def _language_lines(requirements: list[dict] | None) -> list[str]:

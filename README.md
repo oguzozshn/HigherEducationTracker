@@ -4,7 +4,7 @@ Almanya ve Hollanda'daki İngilizce yüksek lisans programlarını, başvuru
 takvimlerini ve kabul şartlarını tek yerde toplayan kişisel araç. Yanında,
 başvuru formlarındaki tekrar eden alanları dolduran bir Chrome eklentisi.
 
-**2859 program** · 221 üniversite · 6253 başvuru tarihi
+**~2860 program** · 221 üniversite · ~6250 başvuru tarihi
 
 Bağımlılık yok — sadece Python 3.11+ ve standart kütüphane. `pip install`
 gerekmiyor, sanal ortam gerekmiyor, veritabanı sunucusu gerekmiyor.

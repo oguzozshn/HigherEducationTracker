@@ -62,6 +62,16 @@ function daysLeft(iso) {
 }
 
 function formatDaysLeft(n) {
+  // Past dates reach here from a programme's full history of intakes. Saying
+  // "-210 gün kaldı" is nonsense, and worse, an expired date sitting at the
+  // top of the list gets read as the next one.
+  if (n < 0) {
+    const past = -n;
+    if (past === 1) return 'dün geçti';
+    if (past < 30) return `${past} gün önce geçti`;
+    if (past < 365) return `${Math.round(past / 30)} ay önce geçti`;
+    return `${(past / 365).toFixed(1)} yıl önce geçti`;
+  }
   if (n === 0) return 'bugün';
   if (n === 1) return 'yarın';
   if (n < 30) return `${n} gün kaldı`;
@@ -258,7 +268,15 @@ function renderDetail(p) {
         <div class="value">${linkify(esc(p.fields[k]))}</div>
       </div>`).join('')}</div></details>` : '';
 
-  const deadlinesHtml = p.deadlines.length ? p.deadlines.map((d) => {
+  // Upcoming first (soonest at the top), expired ones after and dimmed: a
+  // programme lists every intake it has ever had, so without this the list
+  // opens on dates that are years gone.
+  const upcoming = p.deadlines.filter((d) => daysLeft(d.date) >= 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const expired = p.deadlines.filter((d) => daysLeft(d.date) < 0)
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const deadlinesHtml = p.deadlines.length ? [...upcoming, ...expired].map((d) => {
     const n = daysLeft(d.date);
     // An exact date came straight out of a date field; a parsed one was read
     // out of prose and is the reader's cue to double-check.
@@ -269,9 +287,9 @@ function renderDetail(p) {
     const note = exact
       ? 'Kaynak bu tarihi doğrudan tarih alanı olarak yayımlıyor.'
       : `şu metinden çıkarıldı: “${esc(d.source_text)}”`;
-    return `<div class="field">
+    return `<div class="field ${n < 0 ? 'expired' : ''}">
         <div class="label">${esc(d.date)} · ${esc(d.label)}
-          <span class="tag due">${formatDaysLeft(n)}</span> ${badge}</div>
+          <span class="tag ${n < 0 ? '' : 'due'}">${formatDaysLeft(n)}</span> ${badge}</div>
         <div class="src">${note}</div>
       </div>`;
   }).join('') : '<div class="empty">Tarih çıkarılamadı — başvuru dönemleri alanını oku.</div>';

@@ -113,6 +113,23 @@ class TestMapping(AdapterTestCase):
         self.assertEqual(self.listings([record])[0].program.tuition,
                          "1,500–2,694 EUR")
 
+    def test_lone_statutory_rate_is_qualified(self):
+        # 448 of 1300 real Dutch masters publish only the EU/EEA rate. Left
+        # bare it reads as the price to a non-EU applicant, for whom the real
+        # figure is several times higher.
+        record = dict(MAASTRICHT, tuitions=[
+            {"amount": 2694, "tuition_fee_type": "statutory", "period": "year"}])
+        listing = self.listings([record])[0]
+        self.assertEqual(listing.program.tuition, "2,694 EUR/year (EU/EEA only)")
+        fields = {f.label: f.value for f in listing.fields}
+        self.assertIn("Non-EU rate not published", fields["Tuition fees"])
+
+    def test_no_qualifier_when_non_eu_rate_is_known(self):
+        listing = self.listings([MAASTRICHT])[0]      # statutory + international
+        self.assertNotIn("EU/EEA only", listing.program.tuition)
+        fields = {f.label: f.value for f in listing.fields}
+        self.assertNotIn("not published", fields["Tuition fees"])
+
     def test_missing_qualification_falls_back_to_type(self):
         # 34 of 439 real masters carry no `qualification`.
         record = dict(MAASTRICHT, qualification=None)

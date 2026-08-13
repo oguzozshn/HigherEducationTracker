@@ -167,6 +167,8 @@ section.block > h4 {
 .field { background: var(--surface); border: 1px solid var(--border);
          border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; }
 .field .label { font-weight: 600; font-size: 13.5px; margin-bottom: 4px; }
+.field.expired { opacity: 0.55; }
+.field.expired .label { font-weight: 500; }
 .field .value { white-space: pre-wrap; font-size: 14px; color: var(--text); }
 
 /* ---------- checklist ---------- */
